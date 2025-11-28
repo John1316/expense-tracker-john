@@ -1,5 +1,5 @@
 import { getExpensesFromStorage } from "./retrieveDataFromStorage.js";
-// import { calculateTotalExpenses, getHighestExpense } from "../_utils/expensesUtils";
+import { calculateTotalExpenses, getHighestExpense } from "./expensesUtils.js";
 
 let currentCategory = "All";
 const categories = [
@@ -286,41 +286,96 @@ function handleAddExpense(event) {
   console.log("🚀 ~ handleAddExpense ~ expense:", expense);
   event.target.reset(); // Reset form fields
   getExpenses();
+  getHighExpenses();
+  getTotalExpenses();
 }
-document.addEventListener("DOMContentLoaded", () => {
-  const expensesForm = document.getElementById("expensesForm");
-  expensesForm.addEventListener("submit", handleAddExpense);
-});
-function getExpenses() {
+function getMappingLists(expenses) {
+  return expenses
+    .map(
+      ({ id, title, amount, category, date }) => `
+      <tr key=${id}>
+        <td>${title}</td>
+        <td class="amount-cell">${amount} LE</td>
+        <td>
+          <span
+            class='category-badge category-${category.toLowerCase()}'
+          >
+            ${category}
+          </span>
+        </td>
+        <td>${date}</td>
+        <td>
+          <button
+          class="delete-btn" type="button" id="btn-expense-${id}">
+            Delete
+          </button>
+        </td>
+      </tr>`
+    )
+    .join("");
+}
+function getExpenses(category = "All") {
   const savedExpenses = getExpensesFromStorage();
   console.log("🚀 ~ getExpenses ~ savedExpenses:", savedExpenses);
   if (!savedExpenses || savedExpenses?.length === 0) return;
   const expensesList = document.getElementById("expensesList");
-  expensesList.innerHTML = savedExpenses
-    .map(
-      ({ id, title, amount, category, date }) => `
- <tr key=${id}>
-                           <td>${title}</td>
-                           <td class="amount-cell">${amount} LE</td>
-                           <td>
-                             <span
-                               class='category-badge category-${category.toLowerCase()}'
-                             >
-                               ${category}
-                             </span>
-                           </td>
-                           <td>${date}</td>
-                           <td>
-                             <button
-                             class="delete-btn" type="button" id="btn-expense-${id}">
-                               Delete
-                             </button>
-                           </td>
-                         </tr>`
-    )
-    .join("");
+  if (category !== "All") {
+    const filteredExpenses = savedExpenses.filter(
+      (expense) => expense?.category?.toLowerCase() === category?.toLowerCase()
+    );
+    return (expensesList.innerHTML = getMappingLists(filteredExpenses));
+  } else {
+    expensesList.innerHTML = getMappingLists(savedExpenses);
+  }
 }
-// Set up event delegation once
+
+function handleDeleteExpense(expenseId) {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this expense?"
+  );
+  if (!confirmed) return;
+  const savedExpenses = getExpensesFromStorage() || [];
+  const deletedExpenses = savedExpenses.filter(
+    (expense) => expense.id !== expenseId
+  );
+  console.log("🚀 ~ handleDeleteExpense ~ deletedExpenses:", deletedExpenses);
+  localStorage.setItem("expenses", JSON.stringify(deletedExpenses));
+  getExpenses();
+}
+
+function getHighExpensesContainer(highestExpense){
+  console.log("🚀 ~ getHighExpensesContainer ~ highestExpense:", highestExpense)
+  if(!highestExpense) return `<p class="total-amount">No expenses recorded yet.</p>`;
+  return `<p class="total-amount">Title: ${highestExpense?.title || "No expenses recorded yet."}</p>
+              <p class="total-amount">Amount: ${highestExpense?.amount || 0} LE</p>
+                <p class="total-amount">Category: ${highestExpense?.category || "No category recorded yet."}</p>
+                <p class="total-amount">Date: ${highestExpense?.date || "No date recorded yet."}</p>`
+}
+function getHighExpenses(){
+  const savedExpenses = getExpensesFromStorage() || [];
+  if (!savedExpenses || savedExpenses?.length === 0) return;
+  const highestExpense = getHighestExpense( savedExpenses || [] );
+  const totalExpensesContainer = document.getElementById("totalExpenses");
+  totalExpensesContainer.innerHTML = getHighExpensesContainer(highestExpense);
+}
+function getTotalExpenses(){
+  const savedExpenses = getExpensesFromStorage() || [];
+  if (!savedExpenses || savedExpenses?.length === 0) return;
+  const total = calculateTotalExpenses({ expenses: savedExpenses });
+  const totalAmountContainer = document.getElementById("totalAmount");
+  totalAmountContainer.textContent = `${total} LE` || "0 LE";
+}
+function initializeExpenseTracker() {
+  getCategories();
+  getExpenses();
+  getHighExpenses();
+  getTotalExpenses();
+}
+initializeExpenseTracker();
+document.addEventListener("DOMContentLoaded", () => {
+  const expensesForm = document.getElementById("expensesForm");
+  expensesForm.addEventListener("submit", handleAddExpense);
+}); // Set up event delegation once
 document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#expensesList");
 
@@ -333,21 +388,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-function handleDeleteExpense(expenseId) {
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this expense?"
-  );
-  if (!confirmed) return;
-  const savedExpenses = getExpensesFromStorage() || [];
-  const deletedExpenses = savedExpenses.filter(
-    (expense) => expense.id !== expenseId
-  );
-  console.log("🚀 ~ handleDeleteExpense ~ deletedExpenses:", deletedExpenses)
-  localStorage.setItem("expenses", JSON.stringify(deletedExpenses));
-  getExpenses();
-}
-function initializeExpenseTracker() {
-  getCategories();
-  getExpenses();
-}
-initializeExpenseTracker();
+document.addEventListener("DOMContentLoaded", () => {
+  const filterCategory = document.getElementById("filterCategory");
+  filterCategory.addEventListener("click", (event) => {
+    if (event.target.classList.contains("filter-btn")) {
+      const category = event.target.textContent;
+      console.log("🚀 ~ category:", category);
+      selectCategory(category);
+      getCategories(category);
+      getExpenses(category);
+      // You would also want to filter the displayed expenses here
+    }
+  });
+});
