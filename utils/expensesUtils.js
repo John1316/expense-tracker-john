@@ -11,7 +11,15 @@ function calculateTotalExpenses({
       expense.amount === Math.max(...expenses.map(e => e.amount))
     );
   }
+  function getFilteredExpenses(category = "All") {
+    const savedExpenses = getExpensesFromStorage() || [];
+    if (category === "All") return savedExpenses;
+    return savedExpenses.filter(
+      (expense) => expense?.category?.toLowerCase() === category?.toLowerCase()
+    );
+  }
   export {
     calculateTotalExpenses,
-    getHighestExpense
+    getHighestExpense,
+    getFilteredExpenses
   }
