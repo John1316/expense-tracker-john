@@ -1,4 +1,4 @@
-import { getExpensesFromStorage } from "./retrieveDataFromStorage.js";
+import { getExpensesFromStorage, saveToStorage } from "./retrieveDataFromStorage.js";
 import { calculateTotalExpenses, getHighestExpense } from "./expensesUtils.js";
 
 let currentCategory = "All";
@@ -12,7 +12,6 @@ const categories = [
   "Other",
 ];
 function getCategories(category = "All") {
-  console.log("getCategory", category);
   const filterCategory = document.getElementById("filterCategory");
   filterCategory.innerHTML = categories
     .map(
@@ -26,12 +25,12 @@ function getCategories(category = "All") {
     .join("");
 }
 function selectCategory(category) {
-  console.log("🚀 ~ selectCategory ~ category:", category);
   currentCategory = category;
   const filterCategory = document.getElementById("filterCategory");
   filterCategory.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.classList.remove("active");
   });
+  filterCategory.querySelector(`.filter-btn[data-category="${category.toLowerCase()}"]`).classList.add("active");
 }
 function handleAddExpense(event) {
   event.preventDefault();
@@ -43,24 +42,22 @@ function handleAddExpense(event) {
     date: event.target.date.value || new Date().toISOString().split("T")[0],
   };
   selectCategory("All");
-  const savedExpenses = getExpensesFromStorage() || [];
-  if (!savedExpenses || savedExpenses.length === 0) {
-    localStorage.setItem("expenses", JSON.stringify([expense]));
-    console.log("🚀 ~ handleAddExpense ~ expense:", expense);
+  const savedExpenses = getExpensesFromStorage() || null;
+  if (!savedExpenses) {
+   saveToStorage([expense]);
     getExpensesUtils();
     event.target.reset();
     return;
   }
   const updatedExpenses = [...savedExpenses, expense];
-  console.log("🚀 ~ handleAddExpense ~ updatedExpenses:", updatedExpenses);
-  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
-  console.log("🚀 ~ handleAddExpense ~ expense:", expense);
+  saveToStorage(updatedExpenses);
   event.target.reset(); // Reset form fields
   getExpensesUtils();
 }
 // Helper function to get filtered expenses - eliminates code duplication
 function getFilteredExpenses(category = "All") {
-  const savedExpenses = getExpensesFromStorage() || [];
+  const savedExpenses = getExpensesFromStorage() || null;
+  if (!savedExpenses) return [];
   if (category === "All") {
     return savedExpenses;
   }
@@ -113,20 +110,16 @@ function handleDeleteExpense(expenseId) {
     "Are you sure you want to delete this expense?"
   );
   if (!confirmed) return;
-  const savedExpenses = getExpensesFromStorage() || [];
+  const savedExpenses = getExpensesFromStorage() || null;
+  if (!savedExpenses) return;
   const deletedExpenses = savedExpenses.filter(
     (expense) => expense.id !== expenseId
   );
-  console.log("🚀 ~ handleDeleteExpense ~ deletedExpenses:", deletedExpenses);
-  localStorage.setItem("expenses", JSON.stringify(deletedExpenses));
+  saveToStorage(deletedExpenses);
   getExpensesUtils();
 }
 
 function getHighExpensesContainer(highestExpense) {
-  console.log(
-    "🚀 ~ getHighExpensesContainer ~ highestExpense:",
-    highestExpense
-  );
   if (!highestExpense)
     return `<p class="total-amount">No expenses recorded yet.</p>`;
   return `<p class="total-amount">Title: ${
@@ -186,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
   tbody.addEventListener("click", (event) => {
     if (event.target.classList.contains("delete-btn")) {
       const expenseId = event.target.id.split("btn-expense-")[1];
-      console.log("🚀 ~ expenseId:", expenseId);
       handleDeleteExpense(expenseId);
     }
   });
