@@ -1,5 +1,5 @@
-import { getExpensesFromStorage, saveToStorage } from "./retrieveDataFromStorage.js";
-import { calculateTotalExpenses, getHighestExpense } from "./expensesUtils.js";
+import { getExpensesFromStorage, saveToStorage } from "./utils/retrieveDataFromStorage.js";
+import { calculateTotalExpenses, getHighestExpense } from "./utils/expensesUtils.js";
 
 let currentCategory = "All";
 const categories = [
@@ -30,7 +30,7 @@ function selectCategory(category) {
   filterCategory.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.classList.remove("active");
   });
-  filterCategory.querySelector(`.filter-btn[data-category="${category.toLowerCase()}"]`).classList.add("active");
+  filterCategory.querySelector(`.filter-btn`)?.classList.add("active");
 }
 function handleAddExpense(event) {
   event.preventDefault();
