@@ -1,7 +1,8 @@
+import { getExpensesFromStorage } from "./retrieveDataFromStorage.js";
+
 function calculateTotalExpenses({
     expenses,
   }) {
-    console.log("🚀 ~ calculateTotalExpenses ~ expenses:", expenses)
     const total = expenses.reduce((total, expense) => total + parseFloat(expense.amount), 0);
     return total.toFixed(2);
   }

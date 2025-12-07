@@ -1,5 +1,12 @@
-import { getExpensesFromStorage, saveToStorage } from "./utils/retrieveDataFromStorage.js";
-import { calculateTotalExpenses, getHighestExpense } from "./utils/expensesUtils.js";
+import {
+  getExpensesFromStorage,
+  saveToStorage,
+} from "./utils/retrieveDataFromStorage.js";
+import {
+  calculateTotalExpenses,
+  getHighestExpense,
+  getFilteredExpenses,
+} from "./utils/expensesUtils.js";
 
 let currentCategory = "All";
 const categories = [
@@ -44,7 +51,7 @@ function handleAddExpense(event) {
   selectCategory("All");
   const savedExpenses = getExpensesFromStorage() || null;
   if (!savedExpenses) {
-   saveToStorage([expense]);
+    saveToStorage([expense]);
     getExpensesUtils();
     event.target.reset();
     return;
@@ -53,17 +60,6 @@ function handleAddExpense(event) {
   saveToStorage(updatedExpenses);
   event.target.reset(); // Reset form fields
   getExpensesUtils();
-}
-// Helper function to get filtered expenses - eliminates code duplication
-function getFilteredExpenses(category = "All") {
-  const savedExpenses = getExpensesFromStorage() || null;
-  if (!savedExpenses) return [];
-  if (category === "All") {
-    return savedExpenses;
-  }
-  return savedExpenses.filter(
-    (expense) => expense?.category?.toLowerCase() === category?.toLowerCase()
-  );
 }
 
 function getMappingLists(expenses) {
@@ -171,10 +167,10 @@ initializeExpenseTracker();
 document.addEventListener("DOMContentLoaded", () => {
   const expensesForm = document.getElementById("expensesForm");
   expensesForm.addEventListener("submit", handleAddExpense);
-}); // Set up event delegation once
-document.addEventListener("DOMContentLoaded", () => {
+  
+  // Event delegation for delete button
   const tbody = document.querySelector("#expensesList");
-
+  
   // Single event listener on parent element
   tbody.addEventListener("click", (event) => {
     if (event.target.classList.contains("delete-btn")) {
@@ -182,8 +178,8 @@ document.addEventListener("DOMContentLoaded", () => {
       handleDeleteExpense(expenseId);
     }
   });
-});
-document.addEventListener("DOMContentLoaded", () => {
+
+  // Event delegation for filter button
   const filterCategory = document.getElementById("filterCategory");
   filterCategory.addEventListener("click", (event) => {
     if (event.target.classList.contains("filter-btn")) {
@@ -195,9 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
       getTotalExpenses();
     }
   });
-});
-// In script.js, set default date on load
-document.addEventListener("DOMContentLoaded", () => {
+
+  // Set default date on load
   const dateInput = document.getElementById("date");
   dateInput.value = new Date().toISOString().split("T")[0];
-});
+}); // Set up event delegation once
